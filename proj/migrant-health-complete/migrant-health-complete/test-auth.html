@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authentication Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-section {
+        border: 1px solid #ddd;
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .test-result {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 3px;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        margin: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Migrant Health Authentication System Test</h1>
+
+    <div class="test-section">
+      <h2>Admin Authentication Test</h2>
+      <button onclick="testAdminLogin()">Test Admin Login</button>
+      <div id="admin-results"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Patient Authentication Test</h2>
+      <button onclick="testPatientLogin()">Test Patient Login</button>
+      <div id="patient-results"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Hospital Authentication Test</h2>
+      <button onclick="testHospitalLogin()">Test Hospital Login</button>
+      <div id="hospital-results"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Database Status</h2>
+      <button onclick="checkDatabase()">Check Database</button>
+      <div id="database-results"></div>
+    </div>
+
+    <script type="module">
+      import mockApi from "./src/services/mockApi.js";
+
+      window.mockApi = mockApi;
+
+      window.testAdminLogin = async function () {
+        const results = document.getElementById("admin-results");
+        results.innerHTML = "";
+
+        const testCredentials = [
+          { username: "admin", password: "admin@123" },
+          { username: "healthadmin", password: "health@456" },
+        ];
+
+        for (const cred of testCredentials) {
+          try {
+            const result = await mockApi.adminLogin(
+              cred.username,
+              cred.password
+            );
+            const div = document.createElement("div");
+            div.className = result.success
+              ? "test-result success"
+              : "test-result error";
+            div.innerHTML = `<strong>${cred.username}:</strong> ${
+              result.success ? "SUCCESS" : "FAILED"
+            } - ${JSON.stringify(result)}`;
+            results.appendChild(div);
+          } catch (error) {
+            const div = document.createElement("div");
+            div.className = "test-result error";
+            div.innerHTML = `<strong>${cred.username}:</strong> ERROR - ${error.message}`;
+            results.appendChild(div);
+          }
+        }
+      };
+
+      window.testPatientLogin = async function () {
+        const results = document.getElementById("patient-results");
+        results.innerHTML = "";
+
+        const testCredentials = [
+          { uhid: "867159943420", password: "patient123" },
+          { uhid: "867159943421", password: "priya456" },
+          { uhid: "867159943422", password: "ravi789" },
+        ];
+
+        for (const cred of testCredentials) {
+          try {
+            const result = await mockApi.authenticatePatient(
+              cred.uhid,
+              cred.password
+            );
+            const div = document.createElement("div");
+            div.className = result.success
+              ? "test-result success"
+              : "test-result error";
+            div.innerHTML = `<strong>${cred.uhid}:</strong> ${
+              result.success ? "SUCCESS" : "FAILED"
+            } - ${result.success ? result.patient.name : result.error}`;
+            results.appendChild(div);
+          } catch (error) {
+            const div = document.createElement("div");
+            div.className = "test-result error";
+            div.innerHTML = `<strong>${cred.uhid}:</strong> ERROR - ${error.message}`;
+            results.appendChild(div);
+          }
+        }
+      };
+
+      window.testHospitalLogin = async function () {
+        const results = document.getElementById("hospital-results");
+        results.innerHTML = "";
+
+        const testCredentials = [
+          { username: "kochi_gmc", password: "hospital123" },
+          { username: "thrissur_dh", password: "district456" },
+        ];
+
+        for (const cred of testCredentials) {
+          try {
+            const result = await mockApi.hospitalLogin(
+              cred.username,
+              cred.password
+            );
+            const div = document.createElement("div");
+            div.className = result.success
+              ? "test-result success"
+              : "test-result error";
+            div.innerHTML = `<strong>${cred.username}:</strong> ${
+              result.success ? "SUCCESS" : "FAILED"
+            } - ${
+              result.success ? result.hospital.hospitalName : result.error
+            }`;
+            results.appendChild(div);
+          } catch (error) {
+            const div = document.createElement("div");
+            div.className = "test-result error";
+            div.innerHTML = `<strong>${cred.username}:</strong> ERROR - ${error.message}`;
+            results.appendChild(div);
+          }
+        }
+      };
+
+      window.checkDatabase = async function () {
+        const results = document.getElementById("database-results");
+        results.innerHTML = "";
+
+        try {
+          // Check if database exists in localStorage
+          const dbData = localStorage.getItem("mh_demo_db_v1");
+          if (dbData) {
+            const db = JSON.parse(dbData);
+            const div = document.createElement("div");
+            div.className = "test-result success";
+            div.innerHTML = `
+                        <strong>Database Status:</strong> INITIALIZED<br>
+                        <strong>Patients:</strong> ${
+                          db.patients?.length || 0
+                        }<br>
+                        <strong>Doctors:</strong> ${db.doctors?.length || 0}<br>
+                        <strong>Admins:</strong> ${db.admins?.length || 0}<br>
+                        <strong>Hospitals:</strong> ${db.hospitals?.length || 0}
+                    `;
+            results.appendChild(div);
+          } else {
+            const div = document.createElement("div");
+            div.className = "test-result error";
+            div.innerHTML = "<strong>Database Status:</strong> NOT INITIALIZED";
+            results.appendChild(div);
+          }
+        } catch (error) {
+          const div = document.createElement("div");
+          div.className = "test-result error";
+          div.innerHTML = `<strong>Database Error:</strong> ${error.message}`;
+          results.appendChild(div);
+        }
+      };
+    </script>
+  </body>
+</html>
